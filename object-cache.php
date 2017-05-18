@@ -1513,7 +1513,13 @@ class WP_Object_Cache {
 			return $this->cache[ $key ];
 		}
 
-		$keys = array_keys( $this->get( 'alloptionskeys', 'options' ) );
+		// On a cold cache, this will be empty and throw a notice if passed to array_keys below
+		$alloptionskeys = $this->get( 'alloptionskeys', 'options' );
+		if ( ! $alloptionskeys ) {
+			return array();
+		}
+
+		$keys = array_keys( $alloptionskeys );
 		if ( empty( $keys ) ) {
 			return array();
 		}
