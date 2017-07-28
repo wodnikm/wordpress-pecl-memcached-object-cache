@@ -330,11 +330,9 @@ class WP_Object_Cache {
 	 * @param   mixed       $value          The value to store.
 	 * @param   string      $group          The group value appended to the $key.
 	 * @param   int         $expiration     The expiration time, defaults to 0.
-	 * @param   string      $server_key     The key identifying the server to store the value on.
-	 * @param   bool        $byKey          True to store in internal cache by key; false to not store by key
 	 * @return  bool                        Returns TRUE on success or FALSE on failure.
 	 */
-	public function add( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
+	public function add( $key, $value, $group = 'default', $expiration = 0 ) {
 		/*
 		 * Ensuring that wp_suspend_cache_addition is defined before calling, because sometimes an advanced-cache.php
 		 * file will load object-cache.php before wp-includes/functions.php is loaded. In those cases, if wp_cache_add
@@ -365,10 +363,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to Memcached
-		if ( $byKey )
-			$result = $this->m->addByKey( $server_key, $derived_key, $value, $expiration );
-		else
-			$result = $this->m->add( $derived_key, $value, $expiration );
+		$result = $this->m->add( $derived_key, $value, $expiration );
 
 		// Store in runtime cache if add was successful
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() )
@@ -484,11 +479,9 @@ class WP_Object_Cache {
 	 * @param   string      $key        The key under which to store the value.
 	 * @param   string      $group      The group value appended to the $key.
 	 * @param   int         $time       The amount of time the server will wait to delete the item in seconds.
-	 * @param   string      $server_key The key identifying the server to store the value on.
-	 * @param   bool        $byKey      True to store in internal cache by key; false to not store by key
 	 * @return  bool                    Returns TRUE on success or FALSE on failure.
 	 */
-	public function delete( $key, $group = 'default', $time = 0, $server_key = '', $byKey = false ) {
+	public function delete( $key, $group = 'default', $time = 0 ) {
 		if ( $key === 'alloptions' && $group === 'options' ) {
 			return $this->deleteAllOptions();
 		}
@@ -503,10 +496,7 @@ class WP_Object_Cache {
 			return true;
 		}
 
-		if ( $byKey )
-			$result = $this->m->deleteByKey( $server_key, $derived_key, $time );
-		else
-			$result = $this->m->delete( $derived_key, $time );
+		$result = $this->m->delete( $derived_key, $time );
 
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() )
 			unset( $this->cache[$derived_key] );
@@ -550,13 +540,9 @@ class WP_Object_Cache {
 	 * @param   string          $group      The group value appended to the $key.
 	 * @param   bool            $force      Whether or not to force a cache invalidation.
 	 * @param   null|bool       $found      Variable passed by reference to determine if the value was found or not.
-	 * @param   string          $server_key The key identifying the server to store the value on.
-	 * @param   bool            $byKey      True to store in internal cache by key; false to not store by key
-	 * @param   null|callable   $cache_cb   Read-through caching callback.
-	 * @param   null|float      $cas_token  The variable to store the CAS token in.
 	 * @return  bool|mixed                  Cached object value.
 	 */
-	public function get( $key, $group = 'default', $force = false, &$found = null, $server_key = '', $byKey = false, $cache_cb = NULL, &$cas_token = NULL ) {
+	public function get( $key, $group = 'default', $force = false, &$found = null ) {
 		if ( $key === 'alloptions' && $group === 'options' ) {
 			return $this->getAllOptions();
 		}
@@ -566,24 +552,13 @@ class WP_Object_Cache {
 		// Assume object is not found
 		$found = false;
 
-		// If either $cache_db, or $cas_token is set, must hit Memcached and bypass runtime cache
-		if ( func_num_args() > 6 && ! in_array( $group, $this->no_mc_groups ) ) {
-			if ( $byKey )
-				$value = $this->m->getByKey( $server_key, $derived_key, $cache_cb, $cas_token );
-			else
-				$value = $this->m->get( $derived_key, $cache_cb, $cas_token );
+		if ( isset( $this->cache[$derived_key] ) ) {
+			$found = true;
+			return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
+		} elseif ( in_array( $group, $this->no_mc_groups ) ) {
+			return false;
 		} else {
-			if ( isset( $this->cache[$derived_key] ) ) {
-				$found = true;
-				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
-			} elseif ( in_array( $group, $this->no_mc_groups ) ) {
-				return false;
-			} else {
-				if ( $byKey )
-					$value = $this->m->getByKey( $server_key, $derived_key );
-				else
-					$value = $this->m->get( $derived_key );
-			}
+			$value = $this->m->get( $derived_key );
 		}
 
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() ) {
