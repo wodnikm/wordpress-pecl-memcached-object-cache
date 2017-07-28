@@ -162,34 +162,6 @@ function wp_cache_get( $key, $group = '', $force = false, &$found = null, $cache
 }
 
 /**
- * Retrieve object from cache from specified server.
- *
- * Gets an object from cache based on $key, $group and $server_key. In order to fully support the $cache_cb and $cas_token
- * parameters, the runtime cache is ignored by this function if either of those values are set. If either of
- * those values are set, the request is made directly to the memcached server for proper handling of the
- * callback and/or token.
- *
- * @link http://www.php.net/manual/en/memcached.getbykey.php
- *
- * @param string        $server_key The key identifying the server to store the value on.
- * @param string        $key        The key under which to store the value.
- * @param string        $group      The group value appended to the $key.
- * @param bool          $force      Whether or not to force a cache invalidation.
- * @param null|bool     $found      Variable passed by reference to determine if the value was found or not.
- * @param null|string   $cache_cb   Read-through caching callback.
- * @param null|float    $cas_token  The variable to store the CAS token in.
- * @return bool|mixed               Cached object value.
- */
-function wp_cache_get_by_key( $server_key, $key, $group = '', $force = false, &$found = null, $cache_cb = NULL, &$cas_token = NULL ) {
-	global $wp_object_cache;
-
-	if ( func_num_args() > 5 )
-		return $wp_object_cache->getByKey( $server_key, $key, $group, $force, $found, $cache_cb, $cas_token );
-	else
-		return $wp_object_cache->getByKey( $server_key, $key, $group, $force, $found );
-}
-
-/**
  * Sets a value in cache.
  *
  * The value is set whether or not this key already exists in memcached.
@@ -403,27 +375,6 @@ class WP_Object_Cache {
 			$this->add_to_internal_cache( $derived_key, $value );
 
 		return $result;
-	}
-
-	/**
-	 * Adds a value to cache on a specific server.
-	 *
-	 * Using a server_key value, the object can be stored on a specified server as opposed
-	 * to a random server in the stack. Note that this method will add the key/value to the
-	 * _cache object as part of the runtime cache. It will add it to an array for the
-	 * specified server_key.
-	 *
-	 * @link    http://www.php.net/manual/en/memcached.addbykey.php
-	 *
-	 * @param   string      $server_key     The key identifying the server to store the value on.
-	 * @param   string      $key            The key under which to store the value.
-	 * @param   mixed       $value          The value to store.
-	 * @param   string      $group          The group value appended to the $key.
-	 * @param   int         $expiration     The expiration time, defaults to 0.
-	 * @return  bool                        Returns TRUE on success or FALSE on failure.
-	 */
-	public function addByKey( $server_key, $key, $value, $group = 'default', $expiration = 0 ) {
-		return $this->add( $key, $value, $group, $expiration, $server_key, true );
 	}
 
 	/**
