@@ -778,18 +778,6 @@ class WP_Object_Cache {
 	}
 
 	/**
-	 * Get server information by key.
-	 *
-	 * @link    http://www.php.net/manual/en/memcached.getserverbykey.php
-	 *
-	 * @param   string      $server_key     The key identifying the server to store the value on.
-	 * @return  array                       Array with host, post, and weight on success, FALSE on failure.
-	 */
-	public function getServerByKey( $server_key ) {
-		return $this->m->getServerByKey( $server_key );
-	}
-
-	/**
 	 * Get the list of servers in the pool.
 	 *
 	 * @link    http://www.php.net/manual/en/memcached.getserverlist.php
@@ -892,11 +880,9 @@ class WP_Object_Cache {
 	 * @param   mixed       $value      The value to store.
 	 * @param   string      $group      The group value appended to the $key.
 	 * @param   int         $expiration The expiration time, defaults to 0.
-	 * @param   string      $server_key The key identifying the server to store the value on.
-	 * @param   bool        $byKey      True to store in internal cache by key; false to not store by key
 	 * @return  bool                    Returns TRUE on success or FALSE on failure.
 	 */
-	public function set( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
+	public function set( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->buildKey( $key, $group );
 		$expiration  = $this->sanitize_expiration( $expiration );
 
@@ -911,11 +897,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to Memcached
-		if ( $byKey ) {
-			$result = $this->m->setByKey( $server_key, $derived_key, $value, $expiration );
-		} else {
-			$result = $this->m->set( $derived_key, $value, $expiration );
-		}
+		$result = $this->m->set( $derived_key, $value, $expiration );
 
 		// Store in runtime cache if add was successful
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() )
@@ -938,11 +920,9 @@ class WP_Object_Cache {
 	 * @param   array           $items          An array of key/value pairs to store on the server.
 	 * @param   string|array    $groups         Group(s) to merge with key(s) in $items.
 	 * @param   int             $expiration     The expiration time, defaults to 0.
-	 * @param   string          $server_key     The key identifying the server to store the value on.
-	 * @param   bool            $byKey          True to store in internal cache by key; false to not store by key
 	 * @return  bool                            Returns TRUE on success or FALSE on failure.
 	 */
-	public function setMulti( $items, $groups = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
+	public function setMulti( $items, $groups = 'default', $expiration = 0 ) {
 		// Build final keys and replace $items keys with the new keys
 		$derived_keys  = $this->buildKeys( array_keys( $items ), $groups );
 		$expiration    = $this->sanitize_expiration( $expiration );
@@ -962,10 +942,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to memcached
-		if ( $byKey )
-			$result = $this->m->setMultiByKey( $server_key, $derived_items, $expiration );
-		else
-			$result = $this->m->setMulti( $derived_items, $expiration );
+		$result = $this->m->setMulti( $derived_items, $expiration );
 
 		// Store in runtime cache if add was successful
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() )
@@ -986,11 +963,9 @@ class WP_Object_Cache {
 	 * @param   string      $key            The key under which to store the value.
 	 * @param   mixed       $value          The value to store.
 	 * @param   string      $group          The group value appended to the $key.
-	 * @param   bool        $byKey          True to store in internal cache by key; false to not store by key
-	 * @param   int         $expiration     The expiration time, defaults to 0.
 	 * @return  bool                        Returns TRUE on success or FALSE on failure.
 	 */
-	public function replace( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
+	public function replace( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->buildKey( $key, $group );
 		$expiration  = $this->sanitize_expiration( $expiration );
 
@@ -1006,10 +981,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to Memcached
-		if ( $byKey )
-			$result = $this->m->replaceByKey( $server_key, $derived_key, $value, $expiration );
-		else
-			$result = $this->m->replace( $derived_key, $value, $expiration );
+		$result = $this->m->replace( $derived_key, $value, $expiration );
 
 		// Store in runtime cache if add was successful
 		if ( Memcached::RES_SUCCESS === $this->getResultCode() )
