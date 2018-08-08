@@ -1311,7 +1311,7 @@ class WP_Object_Cache {
 			else
 				$value = $this->m->get( $derived_key, $cache_cb, $cas_token );
 		} else {
-			if ( isset( $this->cache[$derived_key] ) ) {
+			if ( isset( $this->cache[$derived_key] ) && ! $force ) {
 				$found = true;
 				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
 			} elseif ( in_array( $group, $this->no_mc_groups ) ) {
