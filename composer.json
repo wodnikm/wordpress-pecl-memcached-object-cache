@@ -1,7 +1,7 @@
 {
     "name": "humanmade/wordpress-pecl-memcached-object-cache",
     "description": "A WordPress object cache that uses the memcached (not memcache) PECL extension.",
-    "type": "library",
+    "type": "wordpress-dropin",
     "license": "GPL-2.0-or-later",
     "authors": [
         {
